@@ -1,3 +1,3 @@
-package kfulton.nand2tetris2.vmcommand
+package kfulton.nand2tetris2.parser
 
 case class ParsingError(message: String)
