@@ -2,7 +2,7 @@ package kfulton.nand2tetris2.translator
 
 import kfulton.nand2tetris2.parser._
 
-class Translator(fileName: String) {
+class Translator {
   val DRegister = RegisterExp(SpecialRegister("D"))
   val MRegister = RegisterExp(SpecialRegister("M"))
   val ARegister = RegisterExp(SpecialRegister("A"))
@@ -15,21 +15,22 @@ class Translator(fileName: String) {
   val popVariable = "v"
   val stackPointer = "SP"
 
-  def generateAssembly(vmCommand: Either[VMCommand, ParsingError], current: Int = 0): Either[List[AssemblyCommand], TranslationError] =
+  def generateAssembly(vmCommand: Either[VMCommand, ParsingError], fileName: String, current: Int = 0): Either[List[AssemblyCommand], TranslationError] =
     vmCommand match {
-      case Left(vmCommand) => translateToAssembly(vmCommand, current)
+      case Left(vmCommand) => translateToAssembly(vmCommand, fileName, current)
       case Right(parsingError) => Right(TranslationError(s"Could not translate parsing error: $parsingError"))
   }
 
-  private def translateToAssembly(vmCommand: VMCommand, current: Int): Either[List[AssemblyCommand], TranslationError] = vmCommand match {
-    case push: Push => Left(generatePushAssembly(push))
-    case pop: Pop => Left(generatePopAssembly(pop)) //handle static
+  private def translateToAssembly(vmCommand: VMCommand, fileName: String, current: Int): Either[List[AssemblyCommand], TranslationError] = vmCommand match {
+    case InitSP => Left(generateInitSP)
+    case push: Push => Left(generatePushAssembly(push, fileName))
+    case pop: Pop => Left(generatePopAssembly(pop, fileName)) //handle static
     case Add => Left(generateArithmeticAssembly(AddExpression(MRegisterValue, DRegisterValue)))
     case Subtract => Left(generateArithmeticAssembly(SubtractExpression(MRegisterValue, DRegisterValue)))
     case Negative => Left(generateNegativeAssembly)
-    case Equal => Left(generateLogicAssembly(EqualExpression(MRegisterValue, DRegisterValue))) //-1 is true, false is 0
-    case LessThan => Left(generateLogicAssembly(LessThanExpression(MRegisterValue, DRegisterValue)))
-    case GreaterThan => Left(generateLogicAssembly(GreaterThanExpression(MRegisterValue, DRegisterValue)))
+    case Equal => Left(generateJumpAssembly("EQ", JumpEqual(DRegisterValue), current))
+    case LessThan => Left(generateJumpAssembly("LT", JumpLessThan(DRegisterValue), current))
+    case GreaterThan => Left(generateJumpAssembly("GT", JumpGreaterThan(DRegisterValue), current))
     case Not => Left(generateNotAssembly)
     case And => Left(generateLogicAssembly(AndAssignmentExpression(DRegisterValue, MRegisterValue)))
     case Or => Left(generateLogicAssembly(OrAssignmentExpression(DRegisterValue, MRegisterValue)))
@@ -37,16 +38,137 @@ class Translator(fileName: String) {
     case ifGoTo: IfGoTo => Left(generateIfGoTo(ifGoTo.variable))
     case label: Label => Left(generateLabel(label.variable))
     case FunctionReturn => Left(generateFunctionReturn(current))
+    case function: Function => Left(generateFunction(function.functionName, function.localVars, fileName))
+    case functionCall: FunctionCall => Left(generateFunctionCall(functionCall.functionName, functionCall.nArgs, current))
     case _ => Right(TranslationError(s"Could not translate vmCommand: $vmCommand."))
   }
 
-  private def generateFunctionReturn(current: Int) = ???
+  private def generateInitSP = List(
+    ConstantExp(256),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(stackPointer)),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
+  )
 
-  private def generateGoTo(str: String): List[AssemblyCommand] = List(
-    Branching(Variable(str), isGoto = true),
+  private def generateFunction(functionName: String, localVars: Int, fileName: String, assemblyCommands: List[AssemblyCommand] = List()): List[AssemblyCommand] =
+    localVars match {
+      case 0 => List(Branching(Variable(functionName), isLabel = true)) ++ assemblyCommands
+      case _ => generateFunction(functionName, localVars - 1, fileName, assemblyCommands ++ generatePushAssembly(Push(Constant, 0), fileName))
+    }
+
+  private def saveSegmentPlacetoStack(segment: String, value: Value) = List(
+    RegisterExp(NameRegister(segment)),
+    RegisterAssignment(DRegister, AssignmentExpression(value)),
+    RegisterExp(NameRegister(stackPointer)),
+    RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+    RegisterExp(NameRegister(stackPointer)),
+    RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
+  )
+
+  private def generateFunctionCall(functionName: String, args: Int, current: Int) = {
+    List(
+      RegisterExp(NameRegister(s"RET$current")),
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
+    ) ++
+      saveSegmentPlacetoStack("LCL", MRegisterValue) ++
+      saveSegmentPlacetoStack("ARG", MRegisterValue) ++
+      saveSegmentPlacetoStack("THIS", MRegisterValue) ++
+      saveSegmentPlacetoStack("THAT", MRegisterValue) ++
+    List(
+      //Reposition Arg=SP -5 - nARGS start
+      ConstantExp(5),
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)), //D = 5
+      //5 + 5 = 10
+      //SP = SP - 10
+      RegisterExp(NameRegister(stackPointer)), //A = 0, M = 265
+      RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)), // 265 = 5 D = 260
+      ConstantExp(args), // A = 5
+      RegisterAssignment(DRegister, SubtractExpression(DRegisterValue, ARegisterValue)), //260 -5  D = 255
+      RegisterExp(NameRegister("ARG")), //A = 2
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)), //M = 255
+      //Reposition Arg end
+      //LCL = SP start
+      RegisterExp(NameRegister(stackPointer)),
+      RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("LCL")),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
+      //LCL = SP end
+    ) ++ generateGoTo(functionName) ++ generateLabel(s"RET$current")
+
+  }
+
+  private def generateFunctionReturn(current: Int) = List(
+    RegisterExp(NameRegister("LCL")),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+    ConstantExp(5),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister(s"RET$current")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+    RegisterExp(NameRegister(stackPointer)),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister("ARG")),
+    RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+    RegisterExp(NameRegister("ARG")),
+    RegisterAssignment(DRegister, AddExpression(MRegisterValue, Const1RegisterValue)),
+    RegisterExp(NameRegister(stackPointer)),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+
+    ConstantExp(1),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister("THAT")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+
+    ConstantExp(2),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister("THIS")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+
+    ConstantExp(3),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister("ARG")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+
+    ConstantExp(4),
+    RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+    RegisterExp(NameRegister(s"ENDFRAME$current")),
+    RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+    RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
+    RegisterExp(NameRegister("LCL")),
+    RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+
+    Branching(Variable(s"RET$current"), isGoto = true),
+    RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
     UnconditionalJump(Const0RegisterValue)
   )
 
+  private def generateGoTo(str: String): List[AssemblyCommand] = List(
+    Branching(Variable(str), isGoto = true), //TODO: Can variable be register name?
+    UnconditionalJump(Const0RegisterValue)
+  )
+
+  //TODO: Create separate case classes for branching?
   private def generateLabel(str: String) = List(
     Branching(Variable(str), isLabel = true)
   )
@@ -60,7 +182,7 @@ class Translator(fileName: String) {
     JumpNotEqual(DRegisterValue)
   )
 
-  private def generatePushAssembly(push: Push): List[AssemblyCommand] = {
+  private def generatePushAssembly(push: Push, fileName: String): List[AssemblyCommand] = {
     if (push.segment.equals(Pointer)) {
       val segment: String = if (push.location.equals(0)) "THIS" else "THAT"
       List(
@@ -109,7 +231,7 @@ class Translator(fileName: String) {
     RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
   )
 
-  private def generatePopAssembly(pop: Pop): List[AssemblyCommand] = {
+  private def generatePopAssembly(pop: Pop, fileName: String): List[AssemblyCommand] = {
     if (pop.segment.equals(Pointer)) {
       val segment: String = if (pop.location.equals(0)) "THIS" else "THAT"
       List(
@@ -186,7 +308,7 @@ class Translator(fileName: String) {
       RegisterAssignment(MRegister, NotAssignmentExpression(MRegisterValue))
     )
 
-  private def generateLogicAssembly(expression: Expression) =
+  private def generateLogicAssembly(expression: Expression) = //need a label here
     List(
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(MRegister, SubtractExpression(MRegisterValue, Value(Right(ConstantExp(1))))),
@@ -201,10 +323,6 @@ class Translator(fileName: String) {
     )
 
   private def generateJumpAssembly(predicate: String, jumpCondition: AssemblyCommand, current: Int) = {
-    val endGoTo = generateGoTo(s"END$current")
-    val endLabel = generateLabel(s"END$current")
-    val predicateGoTo = generateGoTo(s"$predicate$current")
-    val predicateLabel = generateLabel(s"$predicate$current")
     List(
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(MRegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
@@ -213,21 +331,21 @@ class Translator(fileName: String) {
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(MRegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
-      RegisterAssignment(MRegister, SubtractExpression(DRegisterValue, MRegisterValue))) ++
-      predicateGoTo ++
-      List(jumpCondition,
+      RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+      Branching(Variable(s"$predicate$current"), isGoto = true),
+      jumpCondition,
+      RegisterAssignment(DRegister, AssignmentExpression(Const0RegisterValue)),
+      Branching(Variable(s"END$current"), isGoto = true),
+      JumpEqual(Const0RegisterValue),
+      Branching(Variable(s"$predicate$current"), isLabel = true),
+      RegisterAssignment(DRegister, AssignmentExpression(ConstNeg1RegisterValue)),
+      Branching(Variable(s"END$current"), isLabel = true),
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
-      RegisterAssignment(MRegister, AssignmentExpression(Const0RegisterValue)),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
       RegisterExp(NameRegister(stackPointer)),
-      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))) ++
-      endGoTo ++ predicateLabel ++
-      List(RegisterExp(NameRegister(stackPointer)),
-      RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
-      RegisterAssignment(MRegister, AssignmentExpression(ConstNeg1RegisterValue)),
-      RegisterExp(NameRegister(stackPointer)),
-      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))) ++
-      endGoTo ++ endLabel ++ endGoTo
+      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
+    )
   }
 
   private def popFrom: List[AssemblyCommand] =

@@ -2,13 +2,14 @@ package kfulton.nand2tetris2.parser
 
 object VMCommand {
   def fromString(s: String): Option[VMCommand] =
-    Seq(Add, Subtract, Negative, Equal, GreaterThan, LessThan, And, Or, Not).find(_.name == s)
+    Seq(Add, Subtract, Negative, Equal, GreaterThan, LessThan, And, Or, Not, InitSP).find(_.name == s)
 }
 
 //trait VMCommand2
 //case class SimpleVMCommand(commandString: String)
 
 sealed abstract class VMCommand(val name:String)
+case object InitSP extends VMCommand("init")
 case class Push(segment: VMSegment, location: Int) extends VMCommand("push")
 case class Pop(segment: VMSegment, location: Int) extends VMCommand("pop")
 case object Add extends VMCommand("add")
@@ -24,6 +25,8 @@ case class GoTo(variable: String) extends VMCommand("goto")
 case class IfGoTo(variable: String) extends VMCommand("if-goto")
 case class Label(variable: String) extends VMCommand("label")
 case object FunctionReturn extends VMCommand("return")
+case class FunctionCall(functionName: String, nArgs: Int) extends VMCommand("call")
+case class Function(functionName: String, localVars: Int) extends VMCommand("function")
 
 object VMSegment {
   def fromString(s: String): Option[VMSegment] =

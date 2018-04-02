@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 //smaller scope, shorter the name
 class TranslatorTest extends FlatSpec with Matchers {
-  val translator = new Translator("fileName")
+  val translator = new Translator
 
   val DRegister = RegisterExp(SpecialRegister("D"))
   val MRegister = RegisterExp(SpecialRegister("M"))
@@ -30,7 +30,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterExp(NameRegister("SP")),
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
-    translator.generateAssembly(Left(Push(Local, 4))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Push(Local, 4)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle temp push correctly" in {
@@ -47,7 +47,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
 
-    translator.generateAssembly(Left(Push(Temp, 6))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Push(Temp, 6)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle pointer push referencing this correctly" in {
@@ -61,7 +61,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
 
-    translator.generateAssembly(Left(Push(Pointer, 0))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Push(Pointer, 0)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle pointer push referencing that correctly" in {
@@ -75,7 +75,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
 
-    translator.generateAssembly(Left(Push(Pointer, 1))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Push(Pointer, 1)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle static push correctly" in {
@@ -89,7 +89,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
 
-    translator.generateAssembly(Left(Push(Static, 3))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Push(Static, 3)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle constant push correctly" in {
@@ -103,7 +103,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     )
 
-    translator.generateAssembly(Left(Push(Constant, 4))) shouldBe Left(assemblyCommand)
+    translator.generateAssembly(Left(Push(Constant, 4)), "fileName") shouldBe Left(assemblyCommand)
   }
 
   it should "handle pop correctly" in {
@@ -124,7 +124,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     )
 
-    translator.generateAssembly(Left(Pop(Local, 4))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Pop(Local, 4)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle temp pop correctly" in {
@@ -145,7 +145,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     )
 
-    translator.generateAssembly(Left(Pop(Temp, 4))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Pop(Temp, 4)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle 'this' pointer pop correctly" in {
@@ -158,7 +158,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     )
 
-    translator.generateAssembly(Left(Pop(Pointer, 0))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Pop(Pointer, 0)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle 'that' pointer pop correctly" in {
@@ -171,9 +171,8 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     )
 
-    translator.generateAssembly(Left(Pop(Pointer, 1))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Pop(Pointer, 1)), "fileName") shouldBe Left(assemblyCommands)
   }
-
 
   it should "handle static pop correctly" in {
     val assemblyCommands = List(
@@ -185,7 +184,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     )
 
-    translator.generateAssembly(Left(Pop(Static, 5))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Pop(Static, 5)), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle add correctly" in {
@@ -202,7 +201,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Value(Right(ConstantExp(1)))))
     )
 
-    translator.generateAssembly(Left(Add)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Add), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle subtract correctly" in {
@@ -219,7 +218,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Value(Right(ConstantExp(1)))))
     )
 
-    translator.generateAssembly(Left(Subtract)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Subtract), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle turning a value negative correctly" in {
@@ -232,7 +231,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Value(Right(ConstantExp(1)))))
     )
 
-    translator.generateAssembly(Left(Negative)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Negative), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle and" in {
@@ -249,7 +248,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Value(Right(ConstantExp(1)))))
     )
 
-    translator.generateAssembly(Left(And)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(And), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle or" in {
@@ -266,7 +265,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Value(Right(ConstantExp(1)))))
     )
 
-    translator.generateAssembly(Left(Or)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Or), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle not" in {
@@ -277,7 +276,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(MRegister, NotAssignmentExpression(MRegisterValue))
     )
 
-    translator.generateAssembly(Left(Not)) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Not), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle goto" in {
@@ -286,7 +285,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       UnconditionalJump(Value(Right(ConstantExp(0))))
     )
 
-    translator.generateAssembly(Left(GoTo("end3"))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(GoTo("end3")), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle label" in {
@@ -294,7 +293,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       Branching(Variable("end3"), isLabel = true)
     )
 
-    translator.generateAssembly(Left(Label("end3"))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(Label("end3")), "fileName") shouldBe Left(assemblyCommands)
   }
 
   it should "handle if goto" in {
@@ -307,6 +306,88 @@ class TranslatorTest extends FlatSpec with Matchers {
       JumpNotEqual(DRegisterValue)
     )
 
-    translator.generateAssembly(Left(IfGoTo("end2"))) shouldBe Left(assemblyCommands)
+    translator.generateAssembly(Left(IfGoTo("end2")), "fileName") shouldBe Left(assemblyCommands)
+  }
+
+  it should "handle function" in {
+    val assemblyCommands = List(
+      Branching(Variable("FunctionName"),true,false),
+      RegisterExp(NumberRegister(0)),
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue)),
+      RegisterExp(NumberRegister(0)),
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
+    )
+
+    translator.generateAssembly(Left(Function("FunctionName", 2)), "fileName") shouldBe Left(assemblyCommands)
+  }
+
+  it should "handle function call" in {
+    val assemblyCommands = List(
+      RegisterExp(NameRegister("RET3")),
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister,AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister,AddExpression(MRegisterValue,Value(Right(ConstantExp(1))))),
+      RegisterExp(NameRegister("LCL")),
+      RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister,AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister,AddExpression(MRegisterValue,Value(Right(ConstantExp(1))))),
+      RegisterExp(NameRegister("ARG")),
+      RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister,AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister,AddExpression(MRegisterValue,Value(Right(ConstantExp(1))))),
+      RegisterExp(NameRegister("THIS")),
+      RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister,AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister,AddExpression(MRegisterValue,Value(Right(ConstantExp(1))))),
+      RegisterExp(NameRegister("THAT")),
+      RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(ARegister,AssignmentExpression(MRegisterValue)),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(MRegister,AddExpression(MRegisterValue,Value(Right(ConstantExp(1))))),
+      ConstantExp(5),
+      RegisterAssignment(DRegister,AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(DRegister,SubtractExpression(MRegisterValue,DRegisterValue)),
+      ConstantExp(2),
+      RegisterAssignment(DRegister,SubtractExpression(DRegisterValue,ARegisterValue)),
+      RegisterExp(NameRegister("ARG")),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      RegisterExp(NameRegister("SP")),
+      RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
+      RegisterExp(NameRegister("LCL")),
+      RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
+      Branching(Variable("FunctionName"),false,true),
+      UnconditionalJump(Value(Right(ConstantExp(0)))), Branching(Variable("RET3"),true,false)
+    )
+
+    translator.generateAssembly(Left(FunctionCall("FunctionName", 2)),"fileName", 3) shouldBe Left(assemblyCommands)
+  }
+
+  it should "handle function return" in {
+
   }
 }

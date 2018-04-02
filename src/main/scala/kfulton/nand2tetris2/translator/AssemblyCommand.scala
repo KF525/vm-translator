@@ -34,4 +34,6 @@ case class JumpGreaterThanOrEqual(a: Value) extends AssemblyCommand
 case class JumpLessThan(a: Value) extends AssemblyCommand
 case class JumpLessThanOrEqual(a: Value) extends AssemblyCommand
 case class UnconditionalJump(a: Value) extends AssemblyCommand
+//case class Label(name: String) extends AssemblyCommand
+//case class GoTo(name: String) extends AssemblyCommand
 case class Branching(variable: Variable, isLabel: Boolean = false, isGoto: Boolean = false) extends AssemblyCommand
