@@ -281,7 +281,7 @@ class TranslatorTest extends FlatSpec with Matchers {
 
   it should "handle goto" in {
     val assemblyCommands = List(
-      Branching(Variable("end3"), isGoto = true),
+      GoToA("end3"),
       UnconditionalJump(Value(Right(ConstantExp(0))))
     )
 
@@ -290,7 +290,7 @@ class TranslatorTest extends FlatSpec with Matchers {
 
   it should "handle label" in {
     val assemblyCommands = List(
-      Branching(Variable("end3"), isLabel = true)
+      LabelA("end3")
     )
 
     translator.generateAssembly(Left(Label("end3")), "fileName") shouldBe Left(assemblyCommands)
@@ -311,7 +311,7 @@ class TranslatorTest extends FlatSpec with Matchers {
 
   it should "handle function" in {
     val assemblyCommands = List(
-      Branching(Variable("FunctionName"),true,false),
+      LabelA("FunctionName"),
       RegisterExp(NumberRegister(0)),
       RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
       RegisterExp(NameRegister("SP")),
@@ -380,8 +380,9 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
       RegisterExp(NameRegister("LCL")),
       RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
-      Branching(Variable("FunctionName"),false,true),
-      UnconditionalJump(Value(Right(ConstantExp(0)))), Branching(Variable("RET3"),true,false)
+      GoToA("FunctionName"),
+      UnconditionalJump(Value(Right(ConstantExp(0)))),
+      LabelA("RET3")
     )
 
     translator.generateAssembly(Left(FunctionCall("FunctionName", 2)),"fileName", 3) shouldBe Left(assemblyCommands)

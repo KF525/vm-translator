@@ -11,8 +11,6 @@ case class StaticRegister(fileName: String, i: Int) extends Register
 case class ConstantExp(i: Int) extends AssemblyCommand
 case class RegisterExp(r: Register) extends AssemblyCommand
 
-case class Variable(s: String) extends AssemblyCommand
-
 trait Expression extends AssemblyCommand
 case class AssignmentExpression(a: Value) extends Expression
 case class AddExpression(a: Value, b: Value) extends Expression
@@ -34,6 +32,5 @@ case class JumpGreaterThanOrEqual(a: Value) extends AssemblyCommand
 case class JumpLessThan(a: Value) extends AssemblyCommand
 case class JumpLessThanOrEqual(a: Value) extends AssemblyCommand
 case class UnconditionalJump(a: Value) extends AssemblyCommand
-//case class Label(name: String) extends AssemblyCommand
-//case class GoTo(name: String) extends AssemblyCommand
-case class Branching(variable: Variable, isLabel: Boolean = false, isGoto: Boolean = false) extends AssemblyCommand
+case class LabelA(name: String) extends AssemblyCommand
+case class GoToA(name: String) extends AssemblyCommand

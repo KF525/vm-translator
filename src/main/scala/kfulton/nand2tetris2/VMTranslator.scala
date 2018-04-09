@@ -23,7 +23,7 @@ class VMTranslator {
     def generateAssemblyCode2(completedLines: Seq[(String, String)], assemblyCommands: Seq[String] = Seq(), current: Int = 0): Seq[String] =
       completedLines match {
         case Nil => assemblyCommands
-        case h::t => generateAssemblyCode2(t, assemblyCommands ++ generateAssemblyCode(h, completedLines.size)) //maybe this doesn't change
+        case h::t => generateAssemblyCode2(t, assemblyCommands ++ generateAssemblyCode(h, completedLines.size))
     }
 
     writeAssemblyToFile(generateAssemblyCode2(completedLines), fileName)
@@ -36,13 +36,13 @@ class VMTranslator {
 
   private def generateCompletedLinesForFile(file: File): Seq[(String, String)] = {
     val lines = Source.fromFile(file).getLines()
-    val initLines = if (file.getName.equals("successful/Sys.vm")) Seq(("init", "successful/Sys.vm"), ("call Sys.init 0", "successful/Sys.vm")) else Seq()
+    val initLines = if (file.getName.equals("Sys.vm")) Seq(("init", "Sys.vm"), ("call Sys.init 0", "Sys.vm")) else Seq()
     val linesWithFileName = lines.foldLeft(Seq[(String, String)]())((seq, line) => seq ++: Seq((line, file.getName.split(".vm")(0))))
     initLines ++ linesWithFileName
   }
 
 
-  private def orderFiles(files: Seq[File])= if (files.size > 1) {
+  private def orderFiles(files: Seq[File])= if (files.lengthCompare(1) > 0) {
     val sysFile = files.filter(file => file.getName.equals("Sys.vm"))
     val otherFiles = files.filterNot(file => file.getName.equals("Sys.vm"))
     sysFile ++ otherFiles
@@ -62,7 +62,7 @@ class VMTranslator {
     val vmCommandsEither: Either[VMCommand, ParsingError] = parser.generateVMCommand(command._1)
     val assemblyCommandsEither: Either[List[AssemblyCommand], TranslationError] = translator.generateAssembly(vmCommandsEither, command._2, current)
     assemblyCommandsEither match {
-     case Left(commands) => commands.map(printer.generateAssemblyCode(_))
+     case Left(commands) => commands.map(printer.generateAssemblyCode)
      case Right(error) => List[String]()
    }
   }
@@ -80,11 +80,11 @@ class VMTranslator {
 
 object VMTranslator extends App {
   val vmTranslator = new VMTranslator
-//  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful/StackTest.vm", "StackTest")
-  //vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful.FibonacciElement", "successful.FibonacciElement")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/StackTest.vm", "StackTest")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/FibonacciElement", "FibonacciElement")
   vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/StaticsTest", "StaticsTest")
-  //vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful/BasicLoop.vm", "BasicLoop")
-//  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful/FibonacciSeries.vm", "FibonacciSeries")
-  // vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful/SimpleFunction.vm", "SimpleFunction")
-//  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/successful/StackTest.vm", "StackTest")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/BasicLoop.vm", "BasicLoop")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/FibonacciSeries.vm", "FibonacciSeries")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/SimpleFunction.vm", "SimpleFunction")
+  vmTranslator.runProgram("/Users/katefulton/Desktop/N2T/vm-translator/src/main/resources/StackTest.vm", "StackTest")
 }

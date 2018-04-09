@@ -20,8 +20,8 @@ class PrinterTest extends FlatSpec with Matchers {
   }
 
   it should "format branching correctly" in {
-    val goto = Branching(Variable("variable2"), isGoto = true)
-    val label = Branching(Variable("variable2"), isLabel = true)
+    val goto = GoToA("variable2")
+    val label = LabelA("variable2")
 
     assemblyProgramGenerator.generateAssemblyCode(goto) shouldBe "@variable2"
     assemblyProgramGenerator.generateAssemblyCode(label) shouldBe "(variable2)"

@@ -24,7 +24,7 @@ class Translator {
   private def translateToAssembly(vmCommand: VMCommand, fileName: String, current: Int): Either[List[AssemblyCommand], TranslationError] = vmCommand match {
     case InitSP => Left(generateInitSP)
     case push: Push => Left(generatePushAssembly(push, fileName))
-    case pop: Pop => Left(generatePopAssembly(pop, fileName)) //handle static
+    case pop: Pop => Left(generatePopAssembly(pop, fileName))
     case Add => Left(generateArithmeticAssembly(AddExpression(MRegisterValue, DRegisterValue)))
     case Subtract => Left(generateArithmeticAssembly(SubtractExpression(MRegisterValue, DRegisterValue)))
     case Negative => Left(generateNegativeAssembly)
@@ -52,7 +52,7 @@ class Translator {
 
   private def generateFunction(functionName: String, localVars: Int, fileName: String, assemblyCommands: List[AssemblyCommand] = List()): List[AssemblyCommand] =
     localVars match {
-      case 0 => List(Branching(Variable(functionName), isLabel = true)) ++ assemblyCommands
+      case 0 => List(LabelA(functionName)) ++ assemblyCommands
       case _ => generateFunction(functionName, localVars - 1, fileName, assemblyCommands ++ generatePushAssembly(Push(Constant, 0), fileName))
     }
 
@@ -81,25 +81,21 @@ class Translator {
       saveSegmentPlacetoStack("THIS", MRegisterValue) ++
       saveSegmentPlacetoStack("THAT", MRegisterValue) ++
     List(
-      //Reposition Arg=SP -5 - nARGS start
       ConstantExp(5),
-      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)), //D = 5
-      //5 + 5 = 10
-      //SP = SP - 10
-      RegisterExp(NameRegister(stackPointer)), //A = 0, M = 265
-      RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)), // 265 = 5 D = 260
-      ConstantExp(args), // A = 5
-      RegisterAssignment(DRegister, SubtractExpression(DRegisterValue, ARegisterValue)), //260 -5  D = 255
-      RegisterExp(NameRegister("ARG")), //A = 2
-      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)), //M = 255
-      //Reposition Arg end
-      //LCL = SP start
+      RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
+      RegisterExp(NameRegister(stackPointer)),
+      RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)),
+      ConstantExp(args),
+      RegisterAssignment(DRegister, SubtractExpression(DRegisterValue, ARegisterValue)),
+      RegisterExp(NameRegister("ARG")),
+      RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
       RegisterExp(NameRegister("LCL")),
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
-      //LCL = SP end
-    ) ++ generateGoTo(functionName) ++ generateLabel(s"RET$current")
+    ) ++
+      generateGoTo(functionName) ++
+      generateLabel(s"RET$current")
 
   }
 
@@ -158,19 +154,18 @@ class Translator {
     RegisterExp(NameRegister("LCL")),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
 
-    Branching(Variable(s"RET$current"), isGoto = true),
+    GoToA(s"RET$current"),
     RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
     UnconditionalJump(Const0RegisterValue)
   )
 
   private def generateGoTo(str: String): List[AssemblyCommand] = List(
-    Branching(Variable(str), isGoto = true), //TODO: Can variable be register name?
+    GoToA(str),//TODO: Can variable be register name?
     UnconditionalJump(Const0RegisterValue)
   )
 
-  //TODO: Create separate case classes for branching?
   private def generateLabel(str: String) = List(
-    Branching(Variable(str), isLabel = true)
+    LabelA(str)
   )
 
   private def generateIfGoTo(str: String) = List(
@@ -332,14 +327,14 @@ class Translator {
       RegisterAssignment(MRegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
       RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)),
-      Branching(Variable(s"$predicate$current"), isGoto = true),
+      GoToA(s"$predicate$current"),
       jumpCondition,
       RegisterAssignment(DRegister, AssignmentExpression(Const0RegisterValue)),
-      Branching(Variable(s"END$current"), isGoto = true),
+      GoToA(s"END$current"),
       JumpEqual(Const0RegisterValue),
-      Branching(Variable(s"$predicate$current"), isLabel = true),
+      LabelA(s"$predicate$current"),
       RegisterAssignment(DRegister, AssignmentExpression(ConstNeg1RegisterValue)),
-      Branching(Variable(s"END$current"), isLabel = true),
+      LabelA(s"END$current"),
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),

@@ -5,9 +5,6 @@ object VMCommand {
     Seq(Add, Subtract, Negative, Equal, GreaterThan, LessThan, And, Or, Not, InitSP).find(_.name == s)
 }
 
-//trait VMCommand2
-//case class SimpleVMCommand(commandString: String)
-
 sealed abstract class VMCommand(val name:String)
 case object InitSP extends VMCommand("init")
 case class Push(segment: VMSegment, location: Int) extends VMCommand("push")

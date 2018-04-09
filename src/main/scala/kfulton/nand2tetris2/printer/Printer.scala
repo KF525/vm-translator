@@ -19,12 +19,8 @@ class Printer {
       val comparisonValue = getValue(jle.a); s"$comparisonValue; JLE"
     case jmp: UnconditionalJump =>
       val comparisonValue = getValue(jmp.a); s"$comparisonValue; JMP"
-    case branching: Branching =>
-      if (branching.isGoto) {
-        s"@${branching.variable.s}"
-      } else {
-        s"(${branching.variable.s})"
-      }
+    case goto: GoToA => s"@${goto.name}"
+    case label: LabelA => s"(${label.name})"
     case register: RegisterExp => getRegister(register.r)
     case constant: ConstantExp => s"@${constant.i}"
     case assignment: RegisterAssignment =>
