@@ -7,8 +7,6 @@ object VMCommand {
 
 sealed abstract class VMCommand(val name:String)
 case object InitSP extends VMCommand("init")
-case class Push(segment: VMSegment, location: Int) extends VMCommand("push")
-case class Pop(segment: VMSegment, location: Int) extends VMCommand("pop")
 case object Add extends VMCommand("add")
 case object Subtract extends VMCommand("sub")
 case object Negative extends VMCommand("neg")
@@ -18,12 +16,14 @@ case object LessThan extends VMCommand("lt")
 case object And extends VMCommand("and")
 case object Or extends VMCommand("or")
 case object Not extends VMCommand("not")
-case class GoTo(variable: String) extends VMCommand("goto")
-case class IfGoTo(variable: String) extends VMCommand("if-goto")
-case class Label(variable: String) extends VMCommand("label")
 case object FunctionReturn extends VMCommand("return")
 case class FunctionCall(functionName: String, nArgs: Int) extends VMCommand("call")
 case class Function(functionName: String, localVars: Int) extends VMCommand("function")
+case class GoTo(variable: String) extends VMCommand("goto")
+case class IfGoTo(variable: String) extends VMCommand("if-goto")
+case class Label(variable: String) extends VMCommand("label")
+case class Push(segment: VMSegment, location: Int) extends VMCommand("push")
+case class Pop(segment: VMSegment, location: Int) extends VMCommand("pop")
 
 object VMSegment {
   def fromString(s: String): Option[VMSegment] =

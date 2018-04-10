@@ -14,6 +14,8 @@ class Translator {
   val ConstNeg1RegisterValue = Value(Right(ConstantExp(-1)))
   val popVariable = "v"
   val stackPointer = "SP"
+  val argument = "ARG"
+  val local = "LCL"
 
   def generateAssembly(vmCommand: Either[VMCommand, ParsingError], fileName: String, current: Int = 0): Either[List[AssemblyCommand], TranslationError] =
     vmCommand match {
@@ -70,14 +72,14 @@ class Translator {
     List(
       RegisterExp(NameRegister(s"RET$current")),
       RegisterAssignment(DRegister, AssignmentExpression(ARegisterValue)),
-      RegisterExp(NameRegister("SP")),
+      RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
-      RegisterExp(NameRegister("SP")),
+      RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(MRegister, AddExpression(MRegisterValue, Const1RegisterValue))
     ) ++
-      saveSegmentPlacetoStack("LCL", MRegisterValue) ++
-      saveSegmentPlacetoStack("ARG", MRegisterValue) ++
+      saveSegmentPlacetoStack(local, MRegisterValue) ++
+      saveSegmentPlacetoStack(argument, MRegisterValue) ++
       saveSegmentPlacetoStack("THIS", MRegisterValue) ++
       saveSegmentPlacetoStack("THAT", MRegisterValue) ++
     List(
@@ -87,11 +89,11 @@ class Translator {
       RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)),
       ConstantExp(args),
       RegisterAssignment(DRegister, SubtractExpression(DRegisterValue, ARegisterValue)),
-      RegisterExp(NameRegister("ARG")),
+      RegisterExp(NameRegister(argument)),
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
       RegisterExp(NameRegister(stackPointer)),
       RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
-      RegisterExp(NameRegister("LCL")),
+      RegisterExp(NameRegister(local)),
       RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue))
     ) ++
       generateGoTo(functionName) ++
@@ -100,7 +102,7 @@ class Translator {
   }
 
   private def generateFunctionReturn(current: Int) = List(
-    RegisterExp(NameRegister("LCL")),
+    RegisterExp(NameRegister(local)),
     RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
     RegisterExp(NameRegister(s"ENDFRAME$current")),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
@@ -114,10 +116,10 @@ class Translator {
     RegisterExp(NameRegister(stackPointer)),
     RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
     RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
-    RegisterExp(NameRegister("ARG")),
+    RegisterExp(NameRegister(argument)),
     RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
-    RegisterExp(NameRegister("ARG")),
+    RegisterExp(NameRegister(argument)),
     RegisterAssignment(DRegister, AddExpression(MRegisterValue, Const1RegisterValue)),
     RegisterExp(NameRegister(stackPointer)),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
@@ -143,7 +145,7 @@ class Translator {
     RegisterExp(NameRegister(s"ENDFRAME$current")),
     RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
     RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
-    RegisterExp(NameRegister("ARG")),
+    RegisterExp(NameRegister(argument)),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
 
     ConstantExp(4),
@@ -151,16 +153,16 @@ class Translator {
     RegisterExp(NameRegister(s"ENDFRAME$current")),
     RegisterAssignment(ARegister, SubtractExpression(MRegisterValue, DRegisterValue)),
     RegisterAssignment(DRegister, AssignmentExpression(MRegisterValue)),
-    RegisterExp(NameRegister("LCL")),
+    RegisterExp(NameRegister(local)),
     RegisterAssignment(MRegister, AssignmentExpression(DRegisterValue)),
 
-    GoToA(s"RET$current"),
+    GoToA(NameRegister(s"RET$current")),
     RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
     UnconditionalJump(Const0RegisterValue)
   )
 
   private def generateGoTo(str: String): List[AssemblyCommand] = List(
-    GoToA(str),//TODO: Can variable be register name?
+    GoToA(NameRegister(str)),
     UnconditionalJump(Const0RegisterValue)
   )
 
@@ -327,10 +329,10 @@ class Translator {
       RegisterAssignment(MRegister, SubtractExpression(MRegisterValue, Const1RegisterValue)),
       RegisterAssignment(ARegister, AssignmentExpression(MRegisterValue)),
       RegisterAssignment(DRegister, SubtractExpression(MRegisterValue, DRegisterValue)),
-      GoToA(s"$predicate$current"),
+      GoToA(NameRegister(s"$predicate$current")),
       jumpCondition,
       RegisterAssignment(DRegister, AssignmentExpression(Const0RegisterValue)),
-      GoToA(s"END$current"),
+      GoToA(NameRegister(s"END$current")),
       JumpEqual(Const0RegisterValue),
       LabelA(s"$predicate$current"),
       RegisterAssignment(DRegister, AssignmentExpression(ConstNeg1RegisterValue)),

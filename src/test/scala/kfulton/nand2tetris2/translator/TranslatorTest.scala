@@ -281,7 +281,7 @@ class TranslatorTest extends FlatSpec with Matchers {
 
   it should "handle goto" in {
     val assemblyCommands = List(
-      GoToA("end3"),
+      GoToA(NameRegister("end3")),
       UnconditionalJump(Value(Right(ConstantExp(0))))
     )
 
@@ -380,7 +380,7 @@ class TranslatorTest extends FlatSpec with Matchers {
       RegisterAssignment(DRegister,AssignmentExpression(MRegisterValue)),
       RegisterExp(NameRegister("LCL")),
       RegisterAssignment(MRegister,AssignmentExpression(DRegisterValue)),
-      GoToA("FunctionName"),
+      GoToA(NameRegister("FunctionName")),
       UnconditionalJump(Value(Right(ConstantExp(0)))),
       LabelA("RET3")
     )

@@ -3,8 +3,6 @@ package kfulton.nand2tetris2.parser
 import scala.util.matching.Regex.Match
 import scala.util.{Success, Try}
 
-
-//TODO: Clean this up
 class Parser {
   val VMCapturePattern =  "^\\s*(\\w+\\S*\\w*)(?:\\s+(\\w+\\S*\\w*)\\s+(\\d+))?(?:\\s+(\\S+))?.*$".r
 

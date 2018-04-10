@@ -19,7 +19,7 @@ class Printer {
       val comparisonValue = getValue(jle.a); s"$comparisonValue; JLE"
     case jmp: UnconditionalJump =>
       val comparisonValue = getValue(jmp.a); s"$comparisonValue; JMP"
-    case goto: GoToA => s"@${goto.name}"
+    case goto: GoToA => getRegister(goto.register)
     case label: LabelA => s"(${label.name})"
     case register: RegisterExp => getRegister(register.r)
     case constant: ConstantExp => s"@${constant.i}"
@@ -45,9 +45,9 @@ class Printer {
     case add: AddExpression => s"${getValue(add.a)}+${getValue(add.b)}"
     case sub: SubtractExpression => s"${getValue(sub.a)}-${getValue(sub.b)}"
     case neg: NegativeExpression => s"-${getValue(neg.a).toString}"
+    case not: NotAssignmentExpression => s"!${getValue(not.a)}"
     case and: AndAssignmentExpression => s"${getValue(and.a)}&${getValue(and.b)}"
     case or: OrAssignmentExpression => s"${getValue(or.a)}|${getValue(or.b)}"
-    case not: NotAssignmentExpression => s"!${getValue(not.a)}"
     case lt: LessThanExpression => if (getValue(lt.a) < getValue(lt.b)) "-1" else "0"
     case gt: GreaterThanExpression => if (getValue(gt.a) > getValue(gt.b)) "-1" else "0"
     case eq: EqualExpression =>   if (getValue(eq.a) == getValue(eq.b)) "-1" else "0"
